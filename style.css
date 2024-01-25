@@ -1,32 +1,34 @@
-*{
+* {
     margin: 0;
     padding: 0;
     font-family: 'Poppins', sans-serif;
     box-sizing: border-box;
 }
 
-    body{
-        background:#222;
-    }
-
-.card{
-    width: 90%;
-    max-width:  470px;
-background: linear-gradient(135deg, #f83eae,#1c9787);
-color: #fff;
-margin: 100px auto 0;
-border-radius: 20px;
-padding: 40px 35px;
-text-align: center;
+body {
+    background: #222;
 }
-.search{
+
+.card {
+    width: 90%;
+    max-width: 470px;
+    background: linear-gradient(135deg, #f83eae, #1c9787);
+    color: #fff;
+    margin: 100px auto 0;
+    border-radius: 20px;
+    padding: 40px 35px;
+    text-align: center;
+}
+
+.search {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 20px; /* Add margin bottom for spacing */
 }
 
-.search input{
+.search input {
     border: 0;
     outline: 0;
     background: #ebfffc;
@@ -37,40 +39,39 @@ text-align: center;
     flex: 1;
     margin-right: 16px;
     font-size: 18px;
-    
-
 }
 
-.search button{
+.search button {
     border: 0;
     outline: 0;
     background: #ebfffc;
-    border-radius:50% ;
+    border-radius: 50%;
     width: 60px;
     height: 60px;
     cursor: pointer;
 }
 
-.search button img{
+.search button img {
     width: 16px;
 }
 
-
-.weather-icon{
+.weather-icon {
     width: 170px;
     margin-top: 30px;
 }
 
-.weather h1{
+.weather h1 {
     font-size: 80px;
     font-weight: 500;
 }
-.weather h2{
+
+.weather h2 {
     font-size: 45px;
     font-weight: 400;
     margin-top: -10px;
 }
-.details{
+
+.details {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -78,50 +79,51 @@ text-align: center;
     margin-top: 50px;
 }
 
-.col{
+.col {
     display: flex;
     align-items: center;
     text-align: left;
 }
-.col img{
+
+.col img {
     width: 40px;
     margin-right: 10px;
 }
 
-.humidity, .wind{
+.humidity,
+.wind {
     font-size: 28px;
     margin-top: -6px;
 }
 
-.weather{
+.weather {
     display: none;
 }
 
-.error{
+.error {
     text-align: left;
     margin-left: 10px;
     font-size: 14px;
     margin-top: 10px;
     display: none;
 }
-@media(max-width:490px){
-    .chatbot {
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
+@media only screen and (max-width: 768px) {
+    /* Adjust card width for smaller screens */
+    .card {
+        width: 100%; /* Set width to 100% of the viewport width */
+        max-width: 100%; /* Adjust maximum width */
     }
-    .chatbot .chatbox {
-        height: 90%;
-    }
-    .chatbot header span {
 
-       display: flex;
+    /* Center align search items */
+    .search {
+        flex-direction: column;
+        align-items: center;
     }
-    .chatbot header span {
-        display: block;
-        margin-top: -15px;
-                
+
+    .search input {
+        width: 100%; /* Make input full width */
+        margin-right: 0; /* Remove right margin */
+        margin-bottom: 10px; /* Add bottom margin for spacing */
     }
 }
+
