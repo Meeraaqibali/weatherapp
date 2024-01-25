@@ -107,11 +107,17 @@ body {
     margin-top: 10px;
     display: none;
 }
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 740px) {
     /* Adjust card width for smaller screens */
     .card {
+      
         width: 100%; /* Set width to 100% of the viewport width */
         max-width: 100%; /* Adjust maximum width */
+        margin-top: 0;
+        margin-bottom: 0;
+        margin-left: 0;
+        margin-left: 0;
+        height: 100%;
     }
 
     /* Center align search items */
@@ -121,9 +127,16 @@ body {
     }
 
     .search input {
-        width: 100%; /* Make input full width */
+        width: 80%; /* Make input full width */
         margin-right: 0; /* Remove right margin */
         margin-bottom: 10px; /* Add bottom margin for spacing */
     }
+    .details p{
+        width: 100%;
+        max-width: 100%;
+        font-size: 9px;
+        margin-right: 0;
+    }
+   
 }
 
