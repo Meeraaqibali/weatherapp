@@ -432,6 +432,25 @@
   }
   function showDetail(type) {
     if (!currentData) return;
+    // 2-second delay before opening
+    const clickedCard = event && event.target ? event.target.closest('.extra-item, .advice-item, .other-detail-item') : null;
+    if (clickedCard) {
+      if (clickedCard.dataset.loading === '1') return;
+      clickedCard.dataset.loading = '1';
+      clickedCard.style.opacity = '0.5';
+      clickedCard.style.transform = 'scale(0.95)';
+    }
+    if (window._detailTimer) clearTimeout(window._detailTimer);
+    window._detailTimer = setTimeout(() => {
+      if (clickedCard) {
+        clickedCard.style.opacity = '';
+        clickedCard.style.transform = '';
+      }
+      openDetailNow(type);
+    }, 2000);
+  }
+  
+  function openDetailNow(type) {
     const { data, aqiData, c, info, name } = currentData;
     let title = '', value = '', label = '', desc = '', context = '';
     if (type === 'precip') { title = '🌧️ ' + t('precip'); value = `${c.precipitation} mm`; label = `${data.daily.precipitation_probability_max[0]}% ${t('chance')}`; desc = t('desc_precip'); context = c.precipitation > 0 ? `It is currently raining.` : t('ctx_precip'); }
