@@ -1,45 +1,947 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-    <link rel="stylesheet" href="./style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Premium Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --text-color: #ffffff;
+    --card-bg: rgba(255,255,255,0.08);
+    --card-border: rgba(255,255,255,0.15);
+    --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    --solid-bg: #1a1a1a;
+  }
+  body.light-theme {
+    --text-color: #1a1a1a;
+    --card-bg: rgba(0,0,0,0.05);
+    --card-border: rgba(0,0,0,0.1);
+    --bg-gradient: linear-gradient(135deg, #e0eafc, #cfdef3);
+    --solid-bg: #ffffff;
+  }
+  body.dark-theme {
+    --text-color: #ffffff;
+    --card-bg: rgba(20,20,20,0.6);
+    --card-border: rgba(255,255,255,0.1);
+    --bg-gradient: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+    --solid-bg: #1a1a1a;
+  }
+  
+  /* Slower, smoother global transitions */
+  * { 
+    margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; 
+    transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease; 
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg-gradient); color: var(--text-color);
+    padding: 16px; gap: 16px;
+    max-width: 100vw; overflow-x: hidden;
+  }
+  
+  .app { 
+    width: 100%; max-width: 420px; 
+    display: flex; flex-direction: column; gap: 16px; 
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .top-bar { 
+    display: flex; gap: 8px; align-items: center; 
+    width: 100%; max-width: 100%; overflow: hidden; 
+  }
+  .search-bar {
+    flex: 1; min-width: 0;
+    display: flex; gap: 8px; background: var(--card-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border); border-radius: 20px; padding: 6px;
+    transition: all 0.4s ease;
+  }
+  .search-bar input {
+    flex: 1; min-width: 0;
+    background: transparent; border: none; outline: none;
+    color: var(--text-color); font-size: 16px; padding: 10px 14px; font-family: inherit;
+    transition: all 0.4s ease;
+  }
+  .search-bar input::placeholder { color: var(--text-color); opacity: 0.5; }
+  .search-bar button {
+    background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color);
+    border-radius: 14px; padding: 0 18px; font-size: 15px; font-weight: 500;
+    font-family: inherit; cursor: pointer; flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .search-bar button:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+  .settings-btn {
+    background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color);
+    border-radius: 20px; width: 50px; height: 50px; font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .settings-btn:active { transform: scale(0.9) rotate(15deg); background: rgba(255,255,255,0.2); }
+  
+  .card {
+    background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border); border-radius: 32px; padding: 28px 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+    transition: all 0.5s ease;
+  }
+  
+  /* Smoother text entrance */
+  .location { font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
+  .date { font-size: 12px; opacity: 0.5; margin-bottom: 16px; }
+  
+  .main-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .left-side { flex: 1; }
+  .right-side { flex-shrink: 0; margin-left: 16px; }
+  
+  /* Smooth weather icon rotation and fade */
+  .icon { font-size: 72px; margin: 0; display: block; animation: fadeInScale 0.8s ease; }
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.8) rotate(-10deg); }
+    to { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+  
+  .temp { font-size: 80px; font-weight: 200; line-height: 1; letter-spacing: -0.04em; margin: 4px 0; }
+  .temp sup { font-size: 28px; font-weight: 300; vertical-align: super; }
+  .condition { font-size: 16px; font-weight: 400; opacity: 0.9; margin-bottom: 0; }
+  
+  .details { 
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; 
+    border-top: 1px solid var(--card-border); padding-top: 16px; 
+  }
+  .detail-item { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin-bottom: 4px; }
+  .detail-value { font-size: 15px; font-weight: 500; }
+  
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 12px; font-weight: 500; }
+  
+  /* Smoother horizontal scroll */
+  .hourly-scroll { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth; }
+  .hourly-scroll::-webkit-scrollbar { display: none; }
+  .hourly-item { display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 12px 16px; min-width: 70px; transition: all 0.4s ease; }
+  .hourly-item:active { transform: scale(0.95); }
+  .hourly-time { font-size: 12px; opacity: 0.7; }
+  .hourly-icon { font-size: 24px; }
+  .hourly-temp { font-size: 15px; font-weight: 500; }
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App</title>
+  .daily-list { display: flex; flex-direction: column; gap: 8px; }
+  .daily-item { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 12px 16px; transition: all 0.4s ease; }
+  .daily-item:active { transform: scale(0.98); }
+  .daily-day { width: 40px; font-size: 14px; font-weight: 500; }
+  .daily-icon { font-size: 20px; width: 30px; text-align: center; }
+  .daily-temps { font-size: 14px; font-weight: 400; opacity: 0.8; }
+  .daily-temps span { font-weight: 600; opacity: 1; }
+  
+  /* Smoother button press */
+  .more-btn { width: 100%; text-align: center; padding: 12px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; color: var(--text-color); font-family: inherit; font-size: 14px; font-weight: 500; margin-top: 8px; cursor: pointer; transition: all 0.3s ease; }
+  .more-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.15); }
+  
+  .extra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .extra-item { 
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; 
+    padding: 16px; cursor: pointer; position: relative; 
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .extra-item:active { transform: scale(0.95); background: rgba(255,255,255,0.15); }
+  .extra-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; margin-bottom: 6px; }
+  .extra-value { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .extra-desc { font-size: 11px; opacity: 0.7; line-height: 1.4; }
+  .extra-arrow { position: absolute; top: 16px; right: 16px; opacity: 0.4; font-size: 12px; }
 
- </head>
- <body>
-    <div class="card">
-        <div class="search">
-            <input type="text" placeholder="enter city name" spellcheck="false">
-     <button><img src="images/search.png"></button>
-        </div>
-        <div class="error">
-            <p>Invalid city name</p>
-        </div>
-        <div class="weather">
-            <img src="images/rain.png" class="weather-icon" >
-            <h1 class="temp">22°c</h1>
-            <h2 class="city">New York</h2>
-            <div class="details">
-                <div class="col">
-                    <img src="images/humidity.png">
-                    <div>
-                        <p class="humidity">50%</p>
-                        <p>Humidity</p>
-                    </div>
-                </div>
-                <div class="col">
-                    <img src="images/wind.png">
-                    <div>
-                        <p class="wind">15 km/h</p>
-                        <p>Wind Speed</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+  .advice-item { 
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; 
+    padding: 14px; background: var(--card-bg); border: 1px solid var(--card-border); 
+    border-radius: 16px; margin-bottom: 8px; cursor: pointer; 
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .advice-item:active { transform: scale(0.97); background: rgba(255,255,255,0.15); }
+  .advice-left { display: flex; align-items: center; gap: 12px; }
+  .advice-icon { font-size: 20px; }
+  .advice-text { font-size: 13px; line-height: 1.4; opacity: 0.9; }
+  .advice-arrow { opacity: 0.4; font-size: 12px; }
 
+  /* SLOWER FULL SCREEN DETAIL VIEW */
+  .full-screen-detail {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: var(--bg-gradient); z-index: 9999;
+    display: flex; flex-direction: column; padding: 20px;
+    overflow-y: auto; color: var(--text-color);
+    transform: translateX(100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); /* Slower, smoother slide */
+  }
+  .full-screen-detail.active { transform: translateX(0); }
+  
+  .detail-header { 
+    display: flex; align-items: center; gap: 12px; 
+    margin-bottom: 20px; flex-shrink: 0; width: 100%;
+    animation: slideInLeft 0.6s ease;
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .back-btn { 
+    background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); 
+    width: 44px; height: 44px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; font-family: inherit; flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .back-btn:active { transform: scale(0.85); background: rgba(255,255,255,0.2); }
+  .detail-title { font-size: 20px; font-weight: 600; flex: 1; line-height: 1.3; }
+  
+  .detail-main-value { font-size: 60px; font-weight: 200; margin-bottom: 4px; letter-spacing: -0.04em; line-height: 1; animation: fadeInUp 0.8s ease 0.1s both; }
+  .detail-main-label { font-size: 14px; opacity: 0.7; margin-bottom: 28px; animation: fadeInUp 0.8s ease 0.2s both; }
+  
+  .detail-section { margin-bottom: 24px; animation: fadeInUp 0.8s ease 0.3s both; }
+  .detail-section h3 { font-size: 16px; margin-bottom: 10px; opacity: 0.9; font-weight: 600; }
+  .detail-section p { font-size: 14px; line-height: 1.6; opacity: 0.8; margin-bottom: 10px; }
+  .detail-section ul { padding-left: 20px; margin-top: 8px; }
+  .detail-section li { font-size: 14px; line-height: 1.6; opacity: 0.8; margin-bottom: 6px; }
+  
+  .other-details-list { margin-top: 10px; border-top: 1px solid var(--card-border); padding-top: 20px; width: 100%; animation: fadeInUp 0.8s ease 0.4s both; }
+  .list-subtitle {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; 
+    opacity: 0.6; margin-top: 16px; margin-bottom: 12px; font-weight: 600;
+  }
+  .other-detail-item { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 16px; background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 16px; margin-bottom: 10px; cursor: pointer; 
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .other-detail-item:active { transform: scale(0.97); background: rgba(255,255,255,0.15); }
+  .other-detail-item span:first-child { font-size: 14px; font-weight: 500; opacity: 0.9; }
+  .other-detail-item span:last-child { font-size: 16px; opacity: 0.5; font-weight: 300; }
+
+  .modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 100;
+    align-items: center; justify-content: center; padding: 16px;
+    opacity: 0; transition: opacity 0.4s ease;
+  }
+  .modal.active { display: flex; opacity: 1; }
+  .modal-content {
+    background: var(--bg-gradient); border: 1px solid var(--card-border);
+    border-radius: 32px; padding: 24px; width: min(400px, 100%);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3); color: var(--text-color);
+    max-height: 80vh; overflow-y: auto;
+    transform: translateY(20px); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal.active .modal-content { transform: translateY(0); }
+  .modal-content h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; text-align: center; }
+  
+  .setting-item { margin-bottom: 20px; }
+  .setting-item label { display: block; font-size: 13px; font-weight: 500; opacity: 0.8; margin-bottom: 8px; }
+  .setting-item select {
+    width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--card-border);
+    background: var(--card-bg); color: var(--text-color); font-family: inherit; font-size: 15px;
+    outline: none; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px;
+    transition: all 0.4s ease;
+  }
+  .close-btn {
+    width: 100%; padding: 14px; border-radius: 16px; border: none;
+    background: var(--text-color); color: var(--solid-bg);
+    font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;
+    transition: all 0.3s ease;
+  }
+  .close-btn:active { transform: scale(0.97); }
+  .error { color: #ff8a8a; font-size: 14px; text-align: center; margin-top: 10px; }
+  
+  /* Loading pulse animation */
+  .loading-pulse { animation: pulse 1.5s infinite ease-in-out; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+</style>
+</head>
+<body>
+  <div class="app" id="mainApp">
+    <div class="top-bar">
+      <div class="search-bar">
+        <input type="text" id="cityInput" placeholder="Search city..." autocomplete="off">
+        <button id="searchBtn" data-i18n="go">Go</button>
+      </div>
+      <button class="settings-btn" id="settingsBtn">⚙️</button>
     </div>
-    <script src="app.js"></script>
- </body>
- </html>
+
+    <div class="card">
+      <div class="location" id="location">Loading...</div>
+      <div class="date" id="currentDate">--</div>
+      
+      <div class="main-info">
+        <div class="left-side">
+          <div class="temp"><span id="temp">--</span><sup>°</sup></div>
+          <div class="condition" id="condition">Loading...</div>
+        </div>
+        <div class="right-side">
+          <div class="icon" id="icon">☀️</div>
+        </div>
+      </div>
+      
+      <div class="details">
+        <div class="detail-item">
+          <div class="detail-label" data-i18n="wind">Wind</div>
+          <div class="detail-value" id="wind">--</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label" data-i18n="humidity">Humidity</div>
+          <div class="detail-value" id="humidity">--%</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label" data-i18n="feels">Feels Like</div>
+          <div class="detail-value" id="feels">--</div>
+        </div>
+      </div>
+      <div class="error" id="error"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" data-i18n="hourly">Hourly Forecast</div>
+      <div class="hourly-scroll" id="hourlyScroll"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" data-i18n="daily">7-Day Forecast</div>
+      <div class="daily-list" id="dailyList"></div>
+      <button class="more-btn" id="dailyMoreBtn" data-i18n="more">More</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title" data-i18n="details">More Details</div>
+      <div class="extra-grid" id="extraGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" data-i18n="life">🌿 Life Index</div>
+      <div id="lifeIndex"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content">
+      <h2 data-i18n="settings">App Settings</h2>
+      <div class="setting-item">
+        <label data-i18n="theme">Theme Mode</label>
+        <select id="themeSelect">
+          <option value="auto" data-i18n="theme_auto">Auto (Based on Weather)</option>
+          <option value="dark" data-i18n="theme_dark">Dark Mode</option>
+          <option value="light" data-i18n="theme_light">Light Mode</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label data-i18n="temp_unit">Temperature Unit</label>
+        <select id="unitSelect">
+          <option value="C">Celsius (°C)</option>
+          <option value="F">Fahrenheit (°F)</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label data-i18n="wind_unit">Wind Speed Unit</label>
+        <select id="windUnitSelect">
+          <option value="kmh">km/h</option>
+          <option value="mph">mph</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label data-i18n="time_format">Time Format</label>
+        <select id="timeFormatSelect">
+          <option value="12h">12-hour (AM/PM)</option>
+          <option value="24h">24-hour</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label data-i18n="language">Language</label>
+        <select id="langSelect">
+          <option value="en">English</option>
+          <option value="ur">Urdu (اردو)</option>
+          <option value="sd">Sindhi (سنڌي)</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+      <button class="close-btn" id="closeSettingsBtn" data-i18n="done">Done</button>
+    </div>
+  </div>
+
+  <!-- FULL SCREEN DETAIL VIEW -->
+  <div class="full-screen-detail" id="fullScreenDetail">
+    <div class="detail-header">
+      <button class="back-btn" id="backBtn">←</button>
+      <div class="detail-title" id="fsTitle">Details</div>
+    </div>
+    <div class="detail-main-value" id="fsValue">--</div>
+    <div class="detail-main-label" id="fsLabel">--</div>
+    
+    <div class="detail-section">
+      <h3 data-i18n="about">About this metric</h3>
+      <div id="fsDesc"></div>
+    </div>
+    
+    <div class="detail-section">
+      <h3 data-i18n="context">Current Context</h3>
+      <p id="fsContext"></p>
+    </div>
+    
+    <div class="other-details-list">
+      <h3 data-i18n="explore">Explore Other Details</h3>
+      <div id="fsOtherList"></div>
+    </div>
+  </div>
+
+<script>
+  const weatherCodeMap = {
+    0: { desc: 'Clear sky', icon: '☀️', gradient: 'linear-gradient(135deg, #4A90E2, #87CEEB)' },
+    1: { desc: 'Mainly clear', icon: '🌤️', gradient: 'linear-gradient(135deg, #4A90E2, #87CEEB)' },
+    2: { desc: 'Partly cloudy', icon: '⛅', gradient: 'linear-gradient(135deg, #757F9A, #D7DDE8)' },
+    3: { desc: 'Overcast', icon: '☁️', gradient: 'linear-gradient(135deg, #757F9A, #D7DDE8)' },
+    45: { desc: 'Fog', icon: '🌫️', gradient: 'linear-gradient(135deg, #757F9A, #D7DDE8)' },
+    51: { desc: 'Light drizzle', icon: '🌦️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    53: { desc: 'Moderate drizzle', icon: '🌦️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    55: { desc: 'Dense drizzle', icon: '🌧️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    61: { desc: 'Slight rain', icon: '🌧️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    63: { desc: 'Moderate rain', icon: '🌧️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    65: { desc: 'Heavy rain', icon: '🌧️', gradient: 'linear-gradient(135deg, #3A6073, #16222A)' },
+    71: { desc: 'Slight snow', icon: '🌨️', gradient: 'linear-gradient(135deg, #E0EAFC, #CFDEF3)' },
+    73: { desc: 'Moderate snow', icon: '🌨️', gradient: 'linear-gradient(135deg, #E0EAFC, #CFDEF3)' },
+    75: { desc: 'Heavy snow', icon: '❄️', gradient: 'linear-gradient(135deg, #E0EAFC, #CFDEF3)' },
+    95: { desc: 'Thunderstorm', icon: '⛈️', gradient: 'linear-gradient(135deg, #1F1C2C, #928DAB)' },
+    96: { desc: 'Thunderstorm with hail', icon: '⛈️', gradient: 'linear-gradient(135deg, #1F1C2C, #928DAB)' },
+    99: { desc: 'Thunderstorm with heavy hail', icon: '⛈️', gradient: 'linear-gradient(135deg, #1F1C2C, #928DAB)' }
+  };
+
+  const translations = {
+    en: { 
+      search: "Search city...", go: "Go", wind: "Wind", humidity: "Humidity", feels: "Feels Like", 
+      hourly: "Hourly Forecast", daily: "7-Day Forecast", more: "More", less: "Less", 
+      details: "More Details", life: "🌿 Life Index", settings: "App Settings", 
+      theme: "Theme Mode", theme_auto: "Auto (Based on Weather)", theme_dark: "Dark Mode", theme_light: "Light Mode", 
+      temp_unit: "Temperature Unit", wind_unit: "Wind Speed Unit", time_format: "Time Format", language: "Language", 
+      done: "Done", about: "About this metric", context: "Current Context", explore: "Explore Other Details", 
+      weather_metrics: "Weather Metrics", lifestyle_index: "Lifestyle Index",
+      now: "Now", today: "Today",
+      precip: "Precipitation", aqi: "Air Quality", uv: "UV Index", sun: "Sun", sunrise: "Sunrise", sunset: "Sunset", chance: "chance",
+      w0: "Clear sky", w1: "Mainly clear", w2: "Partly cloudy", w3: "Overcast", w45: "Fog", w48: "Rime fog",
+      w51: "Light drizzle", w53: "Moderate drizzle", w55: "Dense drizzle",
+      w61: "Slight rain", w63: "Moderate rain", w65: "Heavy rain",
+      w71: "Slight snow", w73: "Moderate snow", w75: "Heavy snow",
+      w95: "Thunderstorm", w96: "Thunderstorm with hail", w99: "Thunderstorm with heavy hail",
+      d0: "Sun", d1: "Mon", d2: "Tue", d3: "Wed", d4: "Thu", d5: "Fri", d6: "Sat",
+      m0: "January", m1: "February", m2: "March", m3: "April", m4: "May", m5: "June", m6: "July", m7: "August", m8: "September", m9: "October", m10: "November", m11: "December",
+      desc_precip: "<p>Precipitation includes rain, snow, and hail. A 0mm reading means it is currently dry.</p><ul><li><strong>Light:</strong> 0.1 - 2.5 mm</li><li><strong>Moderate:</strong> 2.5 - 7.6 mm</li><li><strong>Heavy:</strong> > 7.6 mm</li></ul>",
+      ctx_precip: "Currently dry. Keep an umbrella handy if the chance rises above 30%.",
+      desc_wind: "<p>Wind direction indicates where the wind is coming from. Light breezes are great for outdoor activities, while strong winds can make it feel colder.</p><ul><li><strong>Light breeze:</strong> < 20 km/h</li><li><strong>Strong winds:</strong> > 20 km/h</li></ul>",
+      ctx_wind: "Light breeze. Pleasant conditions.",
+      desc_aqi: "<p>Air quality affects your respiratory health. The European AQI scale is used here.</p><ul><li><strong>0-20:</strong> Good</li><li><strong>20-40:</strong> Fair</li><li><strong>40-60:</strong> Moderate</li><li><strong>60-80:</strong> Poor</li><li><strong>80-100:</strong> Very Poor</li></ul>",
+      ctx_aqi: "Air quality is satisfactory for most people.",
+      desc_uv: "<p>UV radiation from the sun can damage your skin. This is the maximum index for today.</p><ul><li><strong>0-2:</strong> Low</li><li><strong>3-5:</strong> Moderate</li><li><strong>6-7:</strong> High</li><li><strong>8-10:</strong> Very High</li></ul>",
+      ctx_uv: "Low to moderate UV levels today. Minimal protection needed.",
+      desc_humidity: "<p>Humidity is the amount of water vapor in the air.</p><ul><li><strong>Low:</strong> < 30%</li><li><strong>Comfortable:</strong> 30% - 60%</li><li><strong>High:</strong> > 60%</li></ul>",
+      ctx_humidity: "Comfortable humidity.",
+      desc_sun: "<p>The sun provides essential Vitamin D.</p><ul><li>Try to get some sunlight in the morning.</li><li>Avoid prolonged exposure during peak hours (10 AM - 4 PM).</li><li>Use sunscreen if the UV index is high.</li></ul>",
+      ctx_sun: "Today's sunrise and sunset times.",
+      desc_life_outdoor: "<p>Consider the weather before planning outdoor activities.</p>",
+      ctx_life_outdoor: "Nice weather! It's a great day to be outside. Good for walking, jogging, or sightseeing.",
+      desc_life_clothing: "<p>Dress appropriately for the current temperature.</p>",
+      ctx_life_clothing: "Comfortable weather. A t-shirt and light pants or shorts are perfect. Carry a light jacket just in case.",
+      desc_life_cold: "<p>Weather conditions can affect your risk of catching a cold.</p>",
+      ctx_life_cold: "Stable weather, low risk of catching a cold. Still maintain good hygiene.",
+      desc_life_drive: "<p>Weather can significantly impact driving safety.</p>",
+      ctx_life_drive: "Excellent road conditions with clear visibility. Still follow standard traffic rules."
+    },
+    ur: { 
+      search: "شہر تلاش کریں...", go: "جائیں", wind: "ہوا", humidity: "نمی", feels: "محسوس", 
+      hourly: "گھنٹہ وار پیش گوئی", daily: "7 دن کی پیش گوئی", more: "مزید", less: "کم", 
+      details: "مزید تفصیلات", life: "🌿 لائف انڈیکس", settings: "ایپ کی ترتیبات", 
+      theme: "تھیم موڈ", theme_auto: "خودکار", theme_dark: "ڈارک موڈ", theme_light: "لائٹ موڈ", 
+      temp_unit: "درجہ حرارت یونٹ", wind_unit: "ہوا کی رفتار یونٹ", time_format: "وقت کی ترتیب", language: "زبان", 
+      done: "مکمل", about: "اس پیمائش کے بارے میں", context: "موجودہ سیاق و سباق", explore: "مزید تفصیلات دریافت کریں", 
+      weather_metrics: "موسمی پیمائش", lifestyle_index: "لائف اسٹائل انڈیکس",
+      now: "ابھی", today: "آج",
+      precip: "بارش", aqi: "فضائی معیار", uv: "یووی انڈیکس", sun: "سورج", sunrise: "طلوع آفتاب", sunset: "غروب آفتاب", chance: "امکان",
+      w0: "صاف آسمان", w1: "بنیادی طور پر صاف", w2: "جزوی طور پر ابر آلود", w3: "ابر آلود", w45: "دھند", w48: "دھند",
+      w51: "ہلکی بوندا باندی", w53: "درمیانی بوندا باندی", w55: "تیز بوندا باندی",
+      w61: "ہلکی بارش", w63: "درمیانی بارش", w65: "تیز بارش",
+      w71: "ہلکی برف باری", w73: "درمیانی برف باری", w75: "تیز برف باری",
+      w95: "گرج چمک", w96: "گرج چمک کے ساتھ اولے", w99: "گرج چمک کے ساتھ تیز اولے",
+      d0: "اتوار", d1: "پیر", d2: "منگل", d3: "بدھ", d4: "جمعرات", d5: "جمعہ", d6: "ہفتہ",
+      m0: "جنوری", m1: "فروری", m2: "مارچ", m3: "اپریل", m4: "مئی", m5: "جون", m6: "جولائی", m7: "اگست", m8: "ستمبر", m9: "اکتوبر", m10: "نومبر", m11: "دسمبر",
+      desc_precip: "<p>بارش میں بارش، برف اور اولے شامل ہیں۔ 0mm کا مطلب ہے کہ یہ فی الحال خشک ہے۔</p><ul><li><strong>ہلکی:</strong> 0.1 - 2.5 mm</li><li><strong>درمیانی:</strong> 2.5 - 7.6 mm</li><li><strong>تیز:</strong> > 7.6 mm</li></ul>",
+      ctx_precip: "فی الحال خشک ہے۔ اگر امکان 30% سے اوپر جائے تو چھتری ساتھ رکھیں۔",
+      desc_wind: "<p>ہوا کی سمت بتاتی ہے کہ ہوا کہاں سے آ رہی ہے۔ ہلکی ہوا بیرونی سرگرمیوں کے لیے بہترین ہے، جبکہ تیز ہوا سردی کا احساس بڑھا سکتی ہے۔</p><ul><li><strong>ہلکی ہوا:</strong> < 20 km/h</li><li><strong>تیز ہوا:</strong> > 20 km/h</li></ul>",
+      ctx_wind: "ہلکی ہوا۔ خوشگوار موسم۔",
+      desc_aqi: "<p>فضائی معیار آپ کی سانس کی صحت کو متاثر کرتا ہے۔ یہاں یورپی AQI پیمانہ استعمال کیا گیا ہے۔</p><ul><li><strong>0-20:</strong> اچھا</li><li><strong>20-40:</strong> منصفانہ</li><li><strong>40-60:</strong> معتدل</li><li><strong>60-80:</strong> خراب</li><li><strong>80-100:</strong> بہت خراب</li></ul>",
+      ctx_aqi: "فضائی معیار زیادہ تر لوگوں کے لیے تسلی بخش ہے۔",
+      desc_uv: "<p>سورج سے نکلنے والی UV شعاعیں آپ کی جلد کو نقصان پہنچا سکتی ہیں۔ یہ آج کا زیادہ سے زیادہ انڈیکس ہے۔</p><ul><li><strong>0-2:</strong> کم</li><li><strong>3-5:</strong> معتدل</li><li><strong>6-7:</strong> زیادہ</li><li><strong>8-10:</strong> بہت زیادہ</li></ul>",
+      ctx_uv: "آج UV کی سطح کم سے معتدل ہے۔ کم سے کم تحفظ کی ضرورت ہے۔",
+      desc_humidity: "<p>نمی ہوا میں پانی کے بخارات کی مقدار ہے۔</p><ul><li><strong>کم:</strong> < 30%</li><li><strong>آرام دہ:</strong> 30% - 60%</li><li><strong>زیادہ:</strong> > 60%</li></ul>",
+      ctx_humidity: "آرام دہ نمی۔",
+      desc_sun: "<p>سورج ضروری وٹامن ڈی فراہم کرتا ہے۔</p><ul><li>صبح کے وقت کچھ دھوپ حاصل کرنے کی کوشش کریں۔</li><li>چوٹی کے اوقات (10 AM - 4 PM) میں طویل نمائش سے گریز کریں۔</li><li>اگر UV انڈیکس زیادہ ہو تو سن اسکرین استعمال کریں۔</li></ul>",
+      ctx_sun: "آج طلوع آفتاب اور غروب آفتاب کے اوقات۔",
+      desc_life_outdoor: "<p>بیرونی سرگرمیوں کی منصوبہ بندی سے پہلے موسم پر غور کریں۔</p>",
+      ctx_life_outdoor: "اچھا موسم! باہر جانے کے لیے بہترین دن ہے۔ چہل قدمی، جاگنگ یا سیاحت کے لیے اچھا ہے۔",
+      desc_life_clothing: "<p>موجودہ درجہ حرارت کے مطابق مناسب لباس پہنیں۔</p>",
+      ctx_life_clothing: "آرام دہ موسم۔ ٹی شرٹ اور ہلکی پتلون یا شورٹس بہترین ہیں۔ احتیاط کے طور پر ہلکی جیکٹ ساتھ رکھیں۔",
+      desc_life_cold: "<p>موسمی حالات آپ کے زکام کا شکار ہونے کے خطرے کو متاثر کر سکتے ہیں۔</p>",
+      ctx_life_cold: "مستحکم موسم، زکام کا خطرہ کم ہے۔ پھر بھی صفائی کا خیال رکھیں۔",
+      desc_life_drive: "<p>موسم ڈرائیونگ کی حفاظت کو نمایاں طور پر متاثر کر سکتا ہے۔</p>",
+      ctx_life_drive: "بہترین سڑک کے حالات، واضح مرئیت۔ پھر بھی ٹریفک کے معیاری قوانین پر عمل کریں۔"
+    },
+    sd: { 
+      search: "شهر ڳوليو...", go: "وڃو", wind: "هوا", humidity: "نمي", feels: "محسوس", 
+      hourly: "ڪلاڪوار اڳڪٿي", daily: "7 ڏينهن جي اڳڪٿي", more: "وڌيڪ", less: "گهٽ", 
+      details: "وڌيڪ تفصيل", life: "🌿 لائف انڊيڪس", settings: "ايپ سيٽنگون", 
+      theme: "ٿيم موڊ", theme_auto: "خودڪار", theme_dark: "ڊارڪ موڊ", theme_light: "لائيٽ موڊ", 
+      temp_unit: "درجه حرارت يونٽ", wind_unit: "هوا جي رفتار يونٽ", time_format: "وقت جي ترتيب", language: "ٻولي", 
+      done: "مڪمل", about: "هن ماپ بابت", context: "موجوده حوالي", explore: "وڌيڪ تفصيل ڳوليو", 
+      weather_metrics: "موسمي ماپ", lifestyle_index: "لائف اسٽائل انڊيڪس",
+      now: "هاڻي", today: "اڄ",
+      precip: "برسات", aqi: "فضائي معيار", uv: "يووي انڊيڪس", sun: "سج", sunrise: "سج اڀرڻ", sunset: "سج لهڻ", chance: "امڪان",
+      w0: "صاف آسمان", w1: "مکيه طور صاف", w2: "جزوي طور تي ڪڪر", w3: "ڪڪر", w45: "ڌنڌ", w48: "ڌنڌ",
+      w51: "هلڪي برسات", w53: "وچولي برسات", w55: "تيز برسات",
+      w61: "هلڪو مينهن", w63: "وچولو مينهن", w65: "تيز مينهن",
+      w71: "هلڪي برفباري", w73: "وچولي برفباري", w75: "تيز برفباري",
+      w95: "گرج چمڪ", w96: "گرج چمڪ ۽ اولا", w99: "گرج چمڪ ۽ تيز اولا",
+      d0: "آچر", d1: "سومر", d2: "اڱارو", d3: "اربع", d4: "خميس", d5: "جمع", d6: "ڇنڇر",
+      m0: "جنوري", m1: "فيبروري", m2: "مارچ", m3: "اپريل", m4: "مئي", m5: "جون", m6: "جولاءِ", m7: "آگسٽ", m8: "سيپٽمبر", m9: "آڪٽوبر", m10: "نومبر", m11: "ڊسمبر",
+      desc_precip: "<p>برسات ۾ مينهن، برف ۽ اولا شامل آهن. 0mm جو مطلب آهي ته اهو في الحال خشڪ آهي.</p><ul><li><strong>هلڪي:</strong> 0.1 - 2.5 mm</li><li><strong>وچولي:</strong> 2.5 - 7.6 mm</li><li><strong>تيز:</strong> > 7.6 mm</li></ul>",
+      ctx_precip: "في الحال خشڪ آهي. جيڪڏهن امڪان 30% کان مٿي وڃي ته ڇٽي ساڻ رکو.",
+      desc_wind: "<p>هوا جي هدايت ظاهر ڪري ٿي ته هوا ڪٿان اچي رهي آهي. هلڪي هوا ٻاهرين سرگرمين لاءِ بهترين آهي، جڏهن ته تيز هوا سردي جو احساس وڌائي سگهي ٿي.</p><ul><li><strong>هلڪي هوا:</strong> < 20 km/h</li><li><strong>تيز هوا:</strong> > 20 km/h</li></ul>",
+      ctx_wind: "هلڪي هوا. خوشگوار موسم.",
+      desc_aqi: "<p>فضائي معيار توهان جي ساهه جي صحت کي متاثر ڪري ٿو. هتي يورپي AQI پيمانو استعمال ڪيو ويو آهي.</p><ul><li><strong>0-20:</strong> سٺو</li><li><strong>20-40:</strong> منصفانه</li><li><strong>40-60:</strong> وچولو</li><li><strong>60-80:</strong> خراب</li><li><strong>80-100:</strong> تمام خراب</li></ul>",
+      ctx_aqi: "فضائي معيار گهڻن ماڻهن لاءِ تسلي بخش آهي.",
+      desc_uv: "<p>سج مان نڪرندڙ UV شعاعون توهان جي چمڙي کي نقصان پهچائي سگهن ٿيون. هي اڄ جو وڌ ۾ وڌ انڊيڪس آهي.</p><ul><li><strong>0-2:</strong> گهٽ</li><li><strong>3-5:</strong> وچولو</li><li><strong>6-7:</strong> وڌيڪ</li><li><strong>8-10:</strong> تمام وڌيڪ</li></ul>",
+      ctx_uv: "اڄ UV جي سطح گهٽ کان وچولي آهي. گهٽ ۾ گهٽ تحفظ جي ضرورت آهي.",
+      desc_humidity: "<p>نمي هوا ۾ پاڻي جي بخارن جي مقدار آهي.</p><ul><li><strong>گهٽ:</strong> < 30%</li><li><strong>آرامده:</strong> 30% - 60%</li><li><strong>وڌيڪ:</strong> > 60%</li></ul>",
+      ctx_humidity: "آرامده نمي.",
+      desc_sun: "<p>سج ضروري وٽامن ڊي فراهم ڪري ٿو.</p><ul><li>صبح جو وقت ۾ ڪجهه سج جي روشني حاصل ڪرڻ جي ڪوشش ڪريو.</li><li>چوٽي جي وقتن (10 AM - 4 PM) ۾ ڊگهي نمائش کان پاسو ڪريو.</li><li>جيڪڏهن UV انڊيڪس وڌيڪ هجي ته سن اسڪرين استعمال ڪريو.</li></ul>",
+      ctx_sun: "اڄ سج اڀرڻ ۽ سج لهڻ جا وقت.",
+      desc_life_outdoor: "<p>ٻاهرين سرگرمين جي منصوبابندي کان اڳ موسم تي غور ڪريو.</p>",
+      ctx_life_outdoor: "سٺو موسم! ٻاهر وڃڻ لاءِ بهترين ڏينهن آهي. هلڻ، جاگنگ يا سير لاءِ سٺو آهي.",
+      desc_life_clothing: "<p>موجوده درجه حرارت مطابق مناسب ڪپڙا پائو.</p>",
+      ctx_life_clothing: "آرامده موسم. ٽي شرٽ ۽ هلڪي پتلون يا شارٽس بهترين آهن. احتياط طور هلڪي جيڪٽ ساڻ رکو.",
+      desc_life_cold: "<p>موسمي حالتون توهان جي زڪام جو شڪار ٿيڻ جي خطري کي متاثر ڪري سگهن ٿيون.</p>",
+      ctx_life_cold: "مستحڪم موسم، زڪام جو خطرو گهٽ آهي. تنهن هوندي به صفائي جو خيال رکو.",
+      desc_life_drive: "<p>موسم ڊرائيونگ جي حفاظت کي خاص طور تي متاثر ڪري سگهي ٿو.</p>",
+      ctx_life_drive: "بهترين روڊ جا حالتون، واضح نمائش. تنهن هوندي به ٽريفڪ جا معياري قانونن تي عمل ڪريو."
+    },
+    es: { 
+      search: "Buscar ciudad...", go: "Ir", wind: "Viento", humidity: "Humedad", feels: "Sensación", 
+      hourly: "Pronóstico por hora", daily: "Pronóstico de 7 días", more: "Más", less: "Menos", 
+      details: "Más detalles", life: "🌿 Índice de vida", settings: "Ajustes de la app", 
+      theme: "Modo de tema", theme_auto: "Automático", theme_dark: "Modo oscuro", theme_light: "Modo claro", 
+      temp_unit: "Unidad de temperatura", wind_unit: "Unidad de viento", time_format: "Formato de hora", language: "Idioma", 
+      done: "Listo", about: "Sobre esta métrica", context: "Contexto actual", explore: "Explorar otros detalles", 
+      weather_metrics: "Métricas meteorológicas", lifestyle_index: "Índice de estilo de vida",
+      now: "Ahora", today: "Hoy",
+      precip: "Precipitación", aqi: "Calidad del aire", uv: "Índice UV", sun: "Sol", sunrise: "Amanecer", sunset: "Atardecer", chance: "probabilidad",
+      w0: "Cielo despejado", w1: "Mayormente despejado", w2: "Parcialmente nublado", w3: "Nublado", w45: "Niebla", w48: "Niebla helada",
+      w51: "Llovizna ligera", w53: "Llovizna moderada", w55: "Llovizna densa",
+      w61: "Lluvia ligera", w63: "Lluvia moderada", w65: "Lluvia intensa",
+      w71: "Nieve ligera", w73: "Nieve moderada", w75: "Nieve intensa",
+      w95: "Tormenta", w96: "Tormenta con granizo", w99: "Tormenta con granizo fuerte",
+      d0: "Dom", d1: "Lun", d2: "Mar", d3: "Mié", d4: "Jue", d5: "Vie", d6: "Sáb",
+      m0: "Enero", m1: "Febrero", m2: "Marzo", m3: "Abril", m4: "Mayo", m5: "Junio", m6: "Julio", m7: "Agosto", m8: "Septiembre", m9: "Octubre", m10: "Noviembre", m11: "Diciembre",
+      desc_precip: "<p>La precipitación incluye lluvia, nieve y granizo. Una lectura de 0 mm significa que está seco.</p><ul><li><strong>Ligera:</strong> 0.1 - 2.5 mm</li><li><strong>Moderada:</strong> 2.5 - 7.6 mm</li><li><strong>Intensa:</strong> > 7.6 mm</li></ul>",
+      ctx_precip: "Actualmente seco. Mantenga un paraguas a mano si la probabilidad supera el 30%.",
+      desc_wind: "<p>La dirección del viento indica de dónde viene. Las brisas ligeras son ideales para actividades al aire libre, mientras que los vientos fuertes pueden hacer que se sienta más frío.</p><ul><li><strong>Brisa ligera:</strong> < 20 km/h</li><li><strong>Vientos fuertes:</strong> > 20 km/h</li></ul>",
+      ctx_wind: "Brisa ligera. Condiciones agradables.",
+      desc_aqi: "<p>La calidad del aire afecta su salud respiratoria. Se utiliza la escala AQI europea.</p><ul><li><strong>0-20:</strong> Buena</li><li><strong>20-40:</strong> Aceptable</li><li><strong>40-60:</strong> Moderada</li><li><strong>60-80:</strong> Mala</li><li><strong>80-100:</strong> Muy mala</li></ul>",
+      ctx_aqi: "La calidad del aire es satisfactoria para la mayoría de las personas.",
+      desc_uv: "<p>La radiación UV del sol puede dañar su piel. Este es el índice máximo para hoy.</p><ul><li><strong>0-2:</strong> Bajo</li><li><strong>3-5:</strong> Moderado</li><li><strong>6-7:</strong> Alto</li><li><strong>8-10:</strong> Muy alto</li></ul>",
+      ctx_uv: "Niveles de UV de bajos a moderados hoy. Se necesita protección mínima.",
+      desc_humidity: "<p>La humedad es la cantidad de vapor de agua en el aire.</p><ul><li><strong>Baja:</strong> < 30%</li><li><strong>Cómoda:</strong> 30% - 60%</li><li><strong>Alta:</strong> > 60%</li></ul>",
+      ctx_humidity: "Humedad cómoda.",
+      desc_sun: "<p>El sol proporciona vitamina D esencial.</p><ul><li>Trate de recibir algo de luz solar por la mañana.</li><li>Evite la exposición prolongada durante las horas pico (10 AM - 4 PM).</li><li>Use protector solar si el índice UV es alto.</li></ul>",
+      ctx_sun: "Horas de salida y puesta del sol de hoy.",
+      desc_life_outdoor: "<p>Considere el clima antes de planificar actividades al aire libre.</p>",
+      ctx_life_outdoor: "¡Buen clima! Es un gran día para estar afuera. Ideal para caminar, trotar o hacer turismo.",
+      desc_life_clothing: "<p>Vístase apropiadamente para la temperatura actual.</p>",
+      ctx_life_clothing: "Clima cómodo. Una camiseta y pantalones ligeros o shorts son perfectos. Lleve una chaqueta ligera por si acaso.",
+      desc_life_cold: "<p>Las condiciones climáticas pueden afectar su riesgo de resfriarse.</p>",
+      ctx_life_cold: "Clima estable, bajo riesgo de resfriarse. Mantenga una buena higiene.",
+      desc_life_drive: "<p>El clima puede afectar significativamente la seguridad al conducir.</p>",
+      ctx_life_drive: "Excelentes condiciones de la carretera con visibilidad clara. Siga las reglas de tránsito estándar."
+    }
+  };
+
+  const el = id => document.getElementById(id);
+  const dirMap = ['N','NE','E','SE','S','SW','W','NW'];
+  
+  let currentData = null;
+  let currentCity = 'Digri';
+  let showAllDays = false;
+  let state = { unit: 'C', windUnit: 'kmh', theme: 'auto', timeFormat: '12h', lang: 'en' };
+
+  function t(key) {
+    return translations[state.lang]?.[key] || translations['en'][key] || key;
+  }
+
+  function getWeatherDesc(code) {
+    return t('w' + code) || weatherCodeMap[code]?.desc || 'Unknown';
+  }
+
+  function getWeatherIcon(code) {
+    return weatherCodeMap[code]?.icon || '❓';
+  }
+
+  function applyLanguage() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (el.tagName === 'INPUT' || el.tagName === 'SELECT') { /* Skip */ } else { el.textContent = t(key); }
+    });
+    el('cityInput').placeholder = t('search');
+    if (el('dailyMoreBtn')) el('dailyMoreBtn').textContent = showAllDays ? t('less') : t('more');
+  }
+
+  function loadSettings() {
+    const saved = localStorage.getItem('weatherSettings');
+    if (saved) {
+      state = { ...state, ...JSON.parse(saved) };
+      el('themeSelect').value = state.theme;
+      el('unitSelect').value = state.unit;
+      el('windUnitSelect').value = state.windUnit;
+      el('timeFormatSelect').value = state.timeFormat;
+      el('langSelect').value = state.lang;
+    }
+    applyTheme();
+    applyLanguage();
+  }
+
+  function saveSettings() {
+    localStorage.setItem('weatherSettings', JSON.stringify(state));
+    applyTheme();
+    applyLanguage();
+    if (currentData) renderWeather();
+  }
+
+  function applyTheme() {
+    document.body.className = '';
+    if (state.theme === 'light') document.body.classList.add('light-theme');
+    else if (state.theme === 'dark') document.body.classList.add('dark-theme');
+    if (state.theme === 'auto' && currentData) document.body.style.background = currentData.gradient;
+    else if (state.theme !== 'auto') document.body.style.background = '';
+  }
+
+  function formatTemp(c) { return state.unit === 'C' ? Math.round(c) + '°' : Math.round((c * 9/5) + 32) + '°'; }
+  function formatWind(kmh) { return state.windUnit === 'kmh' ? Math.round(kmh) + ' km/h' : Math.round(kmh * 0.621371) + ' mph'; }
+  
+  function formatTime(isoString) {
+    const d = new Date(isoString);
+    return state.timeFormat === '24h' ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  function formatHour(isoString) { 
+    return new Date(isoString).getHours().toString().padStart(2, '0') + ':00'; 
+  }
+  
+  function formatDay(isoString) { 
+    const dayIndex = new Date(isoString).getDay();
+    return t('d' + dayIndex); 
+  }
+
+  function formatDate(dateObj) {
+    const dayName = t('d' + dateObj.getDay());
+    const monthName = t('m' + dateObj.getMonth());
+    const dayNum = dateObj.getDate();
+    const year = dateObj.getFullYear();
+    
+    if (state.lang === 'ur' || state.lang === 'sd') {
+      return `${dayName}، ${dayNum} ${monthName} ${year}`;
+    }
+    return `${dayName}, ${dayNum} ${monthName} ${year}`;
+  }
+
+  async function geocode(city) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=${state.lang}&format=json`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) throw new Error('City not found');
+    return data.results[0];
+  }
+
+  async function fetchWeather(lat, lon, name) {
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,precipitation&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&timezone=auto`;
+    const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi&timezone=auto`;
+    const [weatherRes, aqiRes] = await Promise.all([fetch(weatherUrl), fetch(aqiUrl)]);
+    const data = await weatherRes.json();
+    const aqiData = await aqiRes.json();
+    const c = data.current;
+    const info = { desc: getWeatherDesc(c.weather_code), icon: getWeatherIcon(c.weather_code), gradient: weatherCodeMap[c.weather_code]?.gradient || 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)' };
+    currentData = { data, aqiData, c, info, name };
+    applyTheme();
+    renderWeather();
+  }
+
+  function showDetail(type) {
+    if (!currentData) return;
+    const { data, aqiData, c, info, name } = currentData;
+    let title = '', value = '', label = '', desc = '', context = '';
+
+    if (type === 'precip') {
+      title = '🌧️ ' + t('precip'); 
+      value = `${c.precipitation} mm`; 
+      label = `${data.daily.precipitation_probability_max[0]}% ${t('chance')}`;
+      desc = t('desc_precip');
+      context = c.precipitation > 0 ? `It is currently raining. ${data.daily.precipitation_probability_max[0]}% chance of continued precipitation today.` : t('ctx_precip');
+    } else if (type === 'wind') {
+      const windDir = dirMap[Math.round(c.wind_direction_10m / 45) % 8];
+      title = '💨 ' + t('wind'); value = formatWind(c.wind_speed_10m); label = `Direction: ${windDir}`;
+      desc = t('desc_wind');
+      context = c.wind_speed_10m > 20 ? `Strong winds at ${formatWind(c.wind_speed_10m)} from the ${windDir}. Secure loose objects outdoors.` : `Light breeze at ${formatWind(c.wind_speed_10m)} from the ${windDir}. ${t('ctx_wind')}`;
+    } else if (type === 'aqi') {
+      const aqi = aqiData.current.european_aqi; let aqiText = 'Good'; if (aqi > 20) aqiText = 'Fair'; if (aqi > 40) aqiText = 'Moderate'; if (aqi > 60) aqiText = 'Poor';
+      title = '🌍 ' + t('aqi'); value = `${aqi}`; label = `Category: ${aqiText}`;
+      desc = t('desc_aqi');
+      context = aqi > 40 ? `Current AQI is ${aqi} (${aqiText}). Sensitive groups should limit outdoor exertion.` : `Current AQI is ${aqi} (${aqiText}). ${t('ctx_aqi')}`;
+    } else if (type === 'uv') {
+      const uv = data.daily.uv_index_max[0]; let uvText = 'Low'; if (uv > 2) uvText = 'Moderate'; if (uv > 5) uvText = 'High'; if (uv > 7) uvText = 'Very High';
+      title = '☀️ ' + t('uv'); value = `${uv}`; label = `Category: ${uvText}`;
+      desc = t('desc_uv');
+      context = uv > 5 ? `High UV levels today (${uv}). Wear sunscreen, a hat, and sunglasses.` : `Low to moderate UV levels today (${uv}). ${t('ctx_uv')}`;
+    } else if (type === 'humidity') {
+      title = '💧 ' + t('humidity'); value = `${c.relative_humidity_2m}%`; label = c.relative_humidity_2m > 60 ? 'Muggy' : 'Comfortable';
+      desc = t('desc_humidity');
+      context = c.relative_humidity_2m > 60 ? `High humidity at ${c.relative_humidity_2m}%. It may feel slightly uncomfortable.` : `Comfortable humidity at ${c.relative_humidity_2m}%.`;
+    } else if (type === 'sun') {
+      title = '🌅 ' + t('sun'); value = `${formatTime(data.daily.sunrise[0])} / ${formatTime(data.daily.sunset[0])}`; label = `${t('sunrise')} / ${t('sunset')}`;
+      desc = t('desc_sun');
+      context = `Today, sunrise is at ${formatTime(data.daily.sunrise[0])} and sunset is at ${formatTime(data.daily.sunset[0])}.`;
+    } else if (type.startsWith('life_')) {
+      const key = type.replace('life_', ''); const temp = c.temperature_2m; const weatherCode = c.weather_code;
+      if (key === 'outdoor') {
+        title = '🏃 Outdoor Activity'; value = (weatherCode >= 51 || temp > 38 || temp < 5) ? 'Not Recommended' : 'Great Day'; label = 'Based on current weather';
+        desc = t('desc_life_outdoor');
+        context = (weatherCode >= 51 || temp > 38 || temp < 5) ? `Severe weather or extreme temperatures (${formatTemp(temp)}) make outdoor activities unsafe today. Stay indoors if possible.` : t('ctx_life_outdoor');
+      } else if (key === 'clothing') {
+        title = '👕 Clothing Advice'; value = temp > 30 ? 'Light Clothing' : temp > 20 ? 'Comfortable' : 'Warm Layers'; label = 'What to wear';
+        desc = t('desc_life_clothing');
+        context = temp > 30 ? `It's very warm. Wear light-colored, breathable fabrics like cotton. Don't forget a hat and sunglasses.` : temp > 20 ? t('ctx_life_clothing') : `It's a bit chilly. Wear a jacket, sweater, or hoodie. Consider layering.`;
+      } else if (key === 'cold') {
+        title = '💊 Cold & Flu Risk'; value = (c.apparent_temperature < 15 || c.relative_humidity_2m > 80) ? 'Higher Risk' : 'Low Risk'; label = 'Health advice';
+        desc = t('desc_life_cold');
+        context = (c.apparent_temperature < 15 || c.relative_humidity_2m > 80) ? `Higher risk today. Keep yourself warm, drink plenty of fluids, and wash your hands frequently.` : t('ctx_life_cold');
+      } else if (key === 'drive') {
+        title = '🚗 Driving Conditions'; value = ((weatherCode >= 45 && weatherCode <= 48) || weatherCode >= 61) ? 'Caution' : 'Excellent'; label = 'Road safety';
+        desc = t('desc_life_drive');
+        context = ((weatherCode >= 45 && weatherCode <= 48) || weatherCode >= 61) ? `Low visibility or wet roads. Drive slowly, keep a safe distance, and use headlights.` : t('ctx_life_drive');
+      }
+    }
+
+    el('fsTitle').textContent = title; el('fsValue').textContent = value; el('fsLabel').textContent = label;
+    el('fsDesc').innerHTML = desc; el('fsContext').textContent = context;
+
+    const weatherMetrics = [
+      { key: 'precip', name: '🌧️ ' + t('precip') }, { key: 'wind', name: '💨 ' + t('wind') },
+      { key: 'aqi', name: '🌍 ' + t('aqi') }, { key: 'uv', name: '☀️ ' + t('uv') },
+      { key: 'humidity', name: '💧 ' + t('humidity') }, { key: 'sun', name: '🌅 ' + t('sun') }
+    ];
+
+    const lifestyleIndex = [
+      { key: 'life_outdoor', name: '🏃 Outdoor Activity' }, { key: 'life_clothing', name: '👕 Clothing Advice' },
+      { key: 'life_cold', name: '💊 Cold & Flu Risk' }, { key: 'life_drive', name: '🚗 Driving Conditions' }
+    ];
+
+    let otherHTML = '';
+
+    let weatherHTML = '';
+    weatherMetrics.forEach(item => {
+      if (item.key !== type) {
+        weatherHTML += `<div class="other-detail-item" onclick="showDetail('${item.key}')"><span>${item.name}</span><span>›</span></div>`;
+      }
+    });
+    if (weatherHTML) {
+      otherHTML += `<div class="list-subtitle">${t('weather_metrics')}</div>${weatherHTML}`;
+    }
+
+    let lifestyleHTML = '';
+    lifestyleIndex.forEach(item => {
+      if (item.key !== type) {
+        lifestyleHTML += `<div class="other-detail-item" onclick="showDetail('${item.key}')"><span>${item.name}</span><span>›</span></div>`;
+      }
+    });
+    if (lifestyleHTML) {
+      otherHTML += `<div class="list-subtitle" style="margin-top: 24px;">${t('lifestyle_index')}</div>${lifestyleHTML}`;
+    }
+
+    el('fsOtherList').innerHTML = otherHTML;
+
+    document.body.style.overflow = 'hidden';
+    el('fullScreenDetail').classList.add('active');
+  }
+
+  function closeDetail() {
+    el('fullScreenDetail').classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
+
+  function renderWeather() {
+    if (!currentData) return;
+    const { data, aqiData, c, info, name } = currentData;
+
+    el('location').textContent = name;
+    el('icon').textContent = info.icon;
+    el('temp').textContent = formatTemp(c.temperature_2m);
+    el('condition').textContent = info.desc;
+    el('wind').textContent = formatWind(c.wind_speed_10m);
+    el('humidity').textContent = `${c.relative_humidity_2m}%`;
+    el('feels').textContent = formatTemp(c.apparent_temperature);
+    el('error').textContent = '';
+
+    el('currentDate').textContent = formatDate(new Date());
+
+    const now = new Date();
+    let hourlyHTML = '';
+    let count = 0;
+    for (let i = 0; i < data.hourly.time.length; i++) {
+      const time = new Date(data.hourly.time[i]);
+      if (time >= now && count < 24) {
+        const hInfo = { icon: getWeatherIcon(data.hourly.weather_code[i]) };
+        hourlyHTML += `
+          <div class="hourly-item">
+            <div class="hourly-time">${count === 0 ? t('now') : formatHour(data.hourly.time[i])}</div>
+            <div class="hourly-icon">${hInfo.icon}</div>
+            <div class="hourly-temp">${formatTemp(data.hourly.temperature_2m[i])}</div>
+          </div>`;
+        count++;
+      }
+    }
+    el('hourlyScroll').innerHTML = hourlyHTML;
+
+    const daysToShow = showAllDays ? data.daily.time.length : 3;
+    let dailyHTML = '';
+    for (let i = 0; i < daysToShow; i++) {
+      const dInfo = { icon: getWeatherIcon(data.daily.weather_code[i]) };
+      const dayName = i === 0 ? t('today') : formatDay(data.daily.time[i]);
+      dailyHTML += `
+        <div class="daily-item">
+          <div class="daily-day">${dayName}</div>
+          <div class="daily-icon">${dInfo.icon}</div>
+          <div class="daily-temps"><span>${formatTemp(data.daily.temperature_2m_max[i])}</span> / ${formatTemp(data.daily.temperature_2m_min[i])}</div>
+        </div>`;
+    }
+    el('dailyList').innerHTML = dailyHTML;
+    el('dailyMoreBtn').textContent = showAllDays ? t('less') : t('more');
+
+    const windDir = dirMap[Math.round(c.wind_direction_10m / 45) % 8];
+    const aqi = aqiData.current.european_aqi;
+    let aqiText = 'Good'; if (aqi > 20) aqiText = 'Fair'; if (aqi > 40) aqiText = 'Moderate'; if (aqi > 60) aqiText = 'Poor';
+    const uv = data.daily.uv_index_max[0];
+    let uvText = 'Low'; if (uv > 2) uvText = 'Moderate'; if (uv > 5) uvText = 'High'; if (uv > 7) uvText = 'Very High';
+
+    el('extraGrid').innerHTML = `
+      <div class="extra-item" onclick="showDetail('precip')">
+        <div class="extra-arrow">›</div><div class="extra-label">🌧️ ${t('precip')}</div>
+        <div class="extra-value">${c.precipitation} mm</div><div class="extra-desc">${data.daily.precipitation_probability_max[0]}% ${t('chance')}</div>
+      </div>
+      <div class="extra-item" onclick="showDetail('wind')">
+        <div class="extra-arrow">›</div><div class="extra-label">💨 ${t('wind')}</div>
+        <div class="extra-value">${formatWind(c.wind_speed_10m)} ${windDir}</div><div class="extra-desc">${c.wind_speed_10m > 20 ? 'Strong winds' : 'Light breeze'}</div>
+      </div>
+      <div class="extra-item" onclick="showDetail('aqi')">
+        <div class="extra-arrow">›</div><div class="extra-label">🌍 ${t('aqi')}</div>
+        <div class="extra-value">${aqi} | ${aqiText}</div><div class="extra-desc">${aqi > 40 ? 'Reduce outdoor exertion' : 'Air quality is satisfactory'}</div>
+      </div>
+      <div class="extra-item" onclick="showDetail('uv')">
+        <div class="extra-arrow">›</div><div class="extra-label">☀️ ${t('uv')}</div>
+        <div class="extra-value">${uv} | ${uvText}</div><div class="extra-desc">${uv > 5 ? 'Use sunscreen' : 'No protection needed'}</div>
+      </div>
+      <div class="extra-item" onclick="showDetail('humidity')">
+        <div class="extra-arrow">›</div><div class="extra-label">💧 ${t('humidity')}</div>
+        <div class="extra-value">${c.relative_humidity_2m}%</div><div class="extra-desc">${c.relative_humidity_2m > 60 ? 'Muggy' : 'Comfortable'}</div>
+      </div>
+      <div class="extra-item" onclick="showDetail('sun')">
+        <div class="extra-arrow">›</div><div class="extra-label">🌅 ${t('sun')}</div>
+        <div class="extra-value">${formatTime(data.daily.sunrise[0])} / ${formatTime(data.daily.sunset[0])}</div><div class="extra-desc">${t('sunrise')} / ${t('sunset')}</div>
+      </div>
+    `;
+
+    let lifeHTML = '';
+    const temp = c.temperature_2m;
+    const weatherCode = c.weather_code;
+    
+    if (weatherCode >= 51 || temp > 38 || temp < 5) {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_outdoor')"><div class="advice-left"><div class="advice-icon">🏃</div><div class="advice-text">Severe weather or extreme temp. Avoid outdoor activities.</div></div><div class="advice-arrow">›</div></div>`;
+    } else {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_outdoor')"><div class="advice-left"><div class="advice-icon">🏃</div><div class="advice-text">Nice weather, good for outdoor activities and sightseeing.</div></div><div class="advice-arrow">›</div></div>`;
+    }
+    if (temp > 30) {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_clothing')"><div class="advice-left"><div class="advice-icon">👕</div><div class="advice-text">Wear light, breathable clothing. Strict sun protection.</div></div><div class="advice-arrow">›</div></div>`;
+    } else if (temp > 20) {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_clothing')"><div class="advice-left"><div class="advice-icon">👕</div><div class="advice-text">Comfortable clothing is recommended.</div></div><div class="advice-arrow">›</div></div>`;
+    } else {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_clothing')"><div class="advice-left"><div class="advice-icon">🧥</div><div class="advice-text">Wear a jacket or sweater. It's a bit chilly.</div></div><div class="advice-arrow">›</div></div>`;
+    }
+    if (c.apparent_temperature < 15 || c.relative_humidity_2m > 80) {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_cold')"><div class="advice-left"><div class="advice-icon">💊</div><div class="advice-text">Higher risk of catching a cold. Stay warm and hydrated.</div></div><div class="advice-arrow">›</div></div>`;
+    } else {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_cold')"><div class="advice-left"><div class="advice-icon">💊</div><div class="advice-text">Stable weather, less likely to catch a cold.</div></div><div class="advice-arrow">›</div></div>`;
+    }
+    if ((weatherCode >= 45 && weatherCode <= 48) || weatherCode >= 61) {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_drive')"><div class="advice-left"><div class="advice-icon">🚗</div><div class="advice-text">Low visibility or wet roads. Drive carefully.</div></div><div class="advice-arrow">›</div></div>`;
+    } else {
+      lifeHTML += `<div class="advice-item" onclick="showDetail('life_drive')"><div class="advice-left"><div class="advice-icon">🚗</div><div class="advice-text">Excellent road conditions, clear visibility.</div></div><div class="advice-arrow">›</div></div>`;
+    }
+    el('lifeIndex').innerHTML = lifeHTML;
+  }
+
+  async function loadCity(city) {
+    try {
+      el('error').textContent = '';
+      el('condition').textContent = 'Loading...';
+      el('condition').classList.add('loading-pulse');
+      const loc = await geocode(city);
+      currentCity = `${loc.name}, ${loc.country}`;
+      await fetchWeather(loc.latitude, loc.longitude, currentCity);
+      el('condition').classList.remove('loading-pulse');
+    } catch (err) {
+      el('error').textContent = err.message;
+      el('condition').textContent = '—';
+      el('condition').classList.remove('loading-pulse');
+    }
+  }
+
+  el('searchBtn').addEventListener('click', () => {
+    const city = el('cityInput').value.trim();
+    if (city) loadCity(city);
+  });
+  el('cityInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const city = el('cityInput').value.trim();
+      if (city) loadCity(city);
+    }
+  });
+  el('dailyMoreBtn').addEventListener('click', () => {
+    showAllDays = !showAllDays;
+    renderWeather();
+  });
+
+  el('settingsBtn').addEventListener('click', () => el('settingsModal').classList.add('active'));
+  el('closeSettingsBtn').addEventListener('click', () => el('settingsModal').classList.remove('active'));
+  el('backBtn').addEventListener('click', closeDetail);
+  
+  el('themeSelect').addEventListener('change', (e) => { state.theme = e.target.value; saveSettings(); });
+  el('unitSelect').addEventListener('change', (e) => { state.unit = e.target.value; saveSettings(); });
+  el('windUnitSelect').addEventListener('change', (e) => { state.windUnit = e.target.value; saveSettings(); });
+  el('timeFormatSelect').addEventListener('change', (e) => { state.timeFormat = e.target.value; saveSettings(); });
+  el('langSelect').addEventListener('change', (e) => { state.lang = e.target.value; saveSettings(); });
+
+  loadSettings();
+  loadCity('Digri');
+</script>
+</body>
+</html>
