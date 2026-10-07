@@ -1,0 +1,16 @@
+{
+  "name": "Premium Weather",
+  "short_name": "Weather",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f2027",
+  "theme_color": "#0f2027",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3845/3845826.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
